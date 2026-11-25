@@ -1,0 +1,99 @@
+.how-it-works-section {
+  padding: var(--space-4xl) 0;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.how-it-works-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2xl);
+  position: relative;
+  margin-top: var(--space-xl);
+}
+
+@media (min-width: 768px) {
+  .how-it-works-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+.how-it-works-line {
+  display: none;
+  position: absolute;
+  top: 40px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--color-border);
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .how-it-works-line {
+    display: block;
+  }
+}
+
+.how-it-works-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.how-it-works-circle {
+  width: 80px;
+  height: 80px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: var(--space-lg);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.how-it-works-step:hover .how-it-works-circle {
+  transform: translateY(-3px);
+  border-color: var(--color-primary);
+}
+
+.how-it-works-icon-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.how-it-works-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 2px 7px;
+  background-color: var(--color-dark);
+  color: var(--color-white);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.how-it-works-step-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 6px;
+}
+
+.how-it-works-step-desc {
+  font-size: 0.88rem;
+  color: var(--color-dark-muted);
+  line-height: 1.55;
+  max-width: 290px;
+}

@@ -1,0 +1,120 @@
+/* CSS Variables, Resets & Base Typography */
+:root {
+  /* Colors - Sophisticated, polished corporate appetite palette (Zomato / Blinkit caliber) */
+  --color-primary: #E23744;          /* Premium food-tech crimson (like Zomato / mature enterprise) */
+  --color-primary-hover: #C92532;    /* Refined darker crimson */
+  --color-primary-active: #A81B26;
+  --color-primary-light: #FDF2F2;    /* Soft clean tint */
+  
+  --color-accent: #F5A623;           /* Warm golden amber (never neon) */
+  --color-accent-hover: #DE931B;
+  --color-accent-light: #FDF8EE;
+
+  --color-dark: #1C1C1C;             /* Clean editorial black */
+  --color-dark-muted: #696969;       /* Professional muted grey */
+  --color-border: #E8E8E8;           /* Crisp subtle separator */
+  --color-border-subtle: #F0F0F0;
+  
+  --color-white: #FFFFFF;
+  --color-bg-warm: #F8F9FA;          /* Subtle modern tech off-white */
+  --color-card-bg: #FFFFFF;
+  
+  --color-success: #1E824C;
+  --color-danger: #D32F2F;
+  --color-danger-bg: #FDE8E8;
+
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 80px;
+
+  /* Radii - Subtle professional rounded corners, NOT pill / capsule buttons */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Subtle high-end shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 36px rgba(0, 0, 0, 0.1);
+  --shadow-primary: 0 4px 12px rgba(226, 55, 68, 0.2);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-warm);
+  color: var(--color-dark);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-dark);
+  line-height: 1.25;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Accessibility: Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
