@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Container } from '../../common/Container/Container';
 import { Button } from '../../common/Button/Button';
+import { useAuth } from '../../../context/AuthContext';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
-import { APP_CONFIG } from '../../../config/appConfig';
 import './Navbar.css';
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Indiranagar, Bengaluru');
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, profile, signOut } = useAuth();
   const { requireAuth } = useRequireAuth();
 
   const handleLocationClick = () => {
@@ -33,22 +35,30 @@ export const Navbar = () => {
     }
   };
 
-  const handleListStoreClick = () => {
-    requireAuth(() => {
-      alert('Redirecting to Merchant Portal');
-    }, 'Sign in or register your food establishment to list surplus inventory.');
+  // "Partner with us" always triggers authentication with role = 'restaurant_owner'
+  const handlePartnerWithUsClick = () => {
+    if (user) {
+      window.location.pathname = '/information';
+    } else {
+      requireAuth(null, 'Register or sign in to your merchant dashboard to list surplus.', 'restaurant_owner');
+    }
   };
 
-  const handleAuthClick = () => {
-    requireAuth(null, 'Sign in or register with your FoodLoop account to continue.');
+  // "Sign In" always triggers authentication with role = 'customer'
+  const handleSignInClick = () => {
+    requireAuth(null, 'Sign in or register as a customer to reserve surplus food.', 'customer');
   };
+
+  const userDashboardLink = (profile?.role === 'restaurant_owner' || user?.user_metadata?.role === 'restaurant_owner')
+    ? '/information'
+    : '/enter-details';
 
   return (
     <header className="navbar-header">
       <Container className="navbar-container">
         {/* Left: Professional Tech Logo */}
         <div className="navbar-left">
-          <a href="#" className="navbar-brand">
+          <Link to="/" className="navbar-brand">
             <svg className="navbar-logo-symbol" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="32" height="32" rx="8" fill="#E23744" />
               <path
@@ -59,7 +69,7 @@ export const Navbar = () => {
             <span className="navbar-brand-name">
               food<span className="navbar-brand-loop">loop</span>
             </span>
-          </a>
+          </Link>
 
           {/* Blinkit-Style Location Pill */}
           <button className="navbar-location-blinkit" onClick={handleLocationClick} type="button">
@@ -75,7 +85,7 @@ export const Navbar = () => {
           </button>
         </div>
 
-        {/* Center: Clean, Corporate Search Bar (Zomato / Blinkit style) */}
+        {/* Center: Clean Search Bar */}
         <form className="navbar-search-clean" onSubmit={handleSearchSubmit}>
           <svg className="search-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#696969" strokeWidth="2">
             <circle cx="9" cy="9" r="6" />
@@ -90,15 +100,26 @@ export const Navbar = () => {
           />
         </form>
 
-        {/* Right: Partner link + Single Unified Auth Button */}
+        {/* Right: Partner link + Auth or User Profile */}
         <div className="navbar-right">
-          <button className="navbar-partner-btn" onClick={handleListStoreClick} type="button">
+          <button className="navbar-partner-btn" onClick={handlePartnerWithUsClick} type="button">
             Partner with us
           </button>
-          
-          <Button variant="primary" size="md" onClick={handleAuthClick}>
-            Sign In
-          </Button>
+
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Link to={userDashboardLink} style={{ fontSize: '0.88rem', fontWeight: '600', color: '#1C1C1C' }}>
+                {user.email?.split('@')[0]}
+              </Link>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Button variant="primary" size="md" onClick={handleSignInClick}>
+              Sign In
+            </Button>
+          )}
         </div>
 
         {/* Mobile Hamburger */}
@@ -140,14 +161,25 @@ export const Navbar = () => {
           <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handleBrowseClick(); }}>
             Browse Deals
           </button>
-          <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handleListStoreClick(); }}>
+          <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handlePartnerWithUsClick(); }}>
             Partner With Us
           </button>
         </div>
 
-        <Button variant="primary" size="md" fullWidth onClick={() => { setIsMobileMenuOpen(false); handleAuthClick(); }}>
-          Sign In / Register
-        </Button>
+        {user ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <Link to={userDashboardLink} className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>
+              Dashboard ({user.email})
+            </Link>
+            <Button variant="outline" size="md" fullWidth onClick={() => { setIsMobileMenuOpen(false); signOut(); }}>
+              Sign Out
+            </Button>
+          </div>
+        ) : (
+          <Button variant="primary" size="md" fullWidth onClick={() => { setIsMobileMenuOpen(false); handleSignInClick(); }}>
+            Sign In / Register
+          </Button>
+        )}
       </div>
     </header>
   );

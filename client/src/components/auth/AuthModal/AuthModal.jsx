@@ -2,66 +2,199 @@ import React, { useState } from 'react';
 import { Modal } from '../../common/Modal/Modal';
 import { Button } from '../../common/Button/Button';
 import { useAuth } from '../../../context/AuthContext';
-import { APP_CONFIG } from '../../../config/appConfig';
+import { supabase } from '../../../lib/supabaseClient';
 import './AuthModal.css';
 
 export const AuthModal = () => {
   const { isAuthModalOpen, closeAuthModal, authModalConfig } = useAuth();
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert(`Signed in with ${email || 'demo account'}! Real Supabase auth will connect in next milestone.`);
+  // The role is determined by which button was clicked ('customer' or 'restaurant_owner')
+  const currentRole = authModalConfig.role || 'customer';
+  const roleLabel = currentRole === 'restaurant_owner' ? 'Restaurant Partner' : 'Customer';
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setErrorMsg('');
+    setSuccessMsg('');
+    setLoading(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
     closeAuthModal();
   };
 
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      if (authMode === 'signup') {
+        // Sign up with Supabase and pass the role in metadata
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: currentRole,
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        // Save selected role in localStorage so auth listener syncs it
+        localStorage.setItem('foodloop_role', currentRole);
+
+        if (data.session) {
+          setSuccessMsg('Account created successfully! Logging you in...');
+          setTimeout(() => handleClose(), 1000);
+        } else {
+          setSuccessMsg('Registration initiated! Please check your email inbox to confirm your account.');
+        }
+      } else {
+        // Sign In with Supabase
+        localStorage.setItem('foodloop_role', currentRole);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        setSuccessMsg('Signed in successfully!');
+        setTimeout(() => handleClose(), 500);
+      }
+    } catch (err) {
+      console.error('Authentication error:', err);
+      setErrorMsg(err.message || 'Authentication failed. Please verify credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      // Store the target role in localStorage so that when redirected back, we remember it
+      localStorage.setItem('foodloop_role', currentRole);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          data: {
+            role: currentRole,
+          },
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Google OAuth error:', err);
+      setErrorMsg(err.message || 'Failed to initialize Google login');
+      setLoading(false);
+    }
+  };
+
+  const modalTitle = currentRole === 'restaurant_owner'
+    ? (authMode === 'login' ? 'Partner Sign In' : 'Partner Registration')
+    : (authMode === 'login' ? 'Sign In to FoodLoop' : 'Create Customer Account');
+
   return (
-    <Modal isOpen={isAuthModalOpen} onClose={closeAuthModal} title={authMode === 'login' ? 'Sign In to FoodLoop' : 'Create an Account'}>
+    <Modal isOpen={isAuthModalOpen} onClose={handleClose} title={modalTitle}>
       <div className="auth-modal-content">
-        <p className="auth-modal-message">{authModalConfig.message}</p>
+        <div className="auth-role-indicator">
+          <span>Accessing as: <strong>{roleLabel}</strong></span>
+        </div>
+
+        {errorMsg && <div className="auth-alert auth-alert--error">{errorMsg}</div>}
+        {successMsg && <div className="auth-alert auth-alert--success">{successMsg}</div>}
 
         {/* Tab switch between Login and Sign Up */}
         <div className="auth-tab-switch">
           <button
             type="button"
             className={`auth-tab ${authMode === 'login' ? 'is-active' : ''}`}
-            onClick={() => setAuthMode('login')}
+            onClick={() => { setAuthMode('login'); setErrorMsg(''); }}
           >
             Sign In
           </button>
           <button
             type="button"
             className={`auth-tab ${authMode === 'signup' ? 'is-active' : ''}`}
-            onClick={() => setAuthMode('signup')}
+            onClick={() => { setAuthMode('signup'); setErrorMsg(''); }}
           >
             Register
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-modal-form">
+        <form onSubmit={handleEmailAuth} className="auth-modal-form">
+          {authMode === 'signup' && (
+            <div className="form-group">
+              <label className="form-label">
+                {currentRole === 'restaurant_owner' ? 'Business / Contact Name' : 'Full Name'}
+              </label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                placeholder={currentRole === 'restaurant_owner' ? 'e.g. Crust & Co. Bakery' : 'e.g. Alex Sharma'}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="form-group">
-            <label className="form-label">Email or Phone Number</label>
+            <label className="form-label">Email Address</label>
             <input
-              type="text"
+              type="email"
               required
               className="form-input"
-              placeholder="e.g. name@company.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <Button variant="primary" size="lg" fullWidth type="submit">
-            {authMode === 'login' ? 'Continue with Email' : 'Register Account'}
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="form-input"
+              placeholder="Min. 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <Button variant="primary" size="lg" fullWidth type="submit" disabled={loading}>
+            {loading ? 'Processing...' : (authMode === 'login' ? `Sign In as ${roleLabel}` : `Register as ${roleLabel}`)}
           </Button>
         </form>
 
         <div className="auth-modal-divider">
-          <span>or</span>
+          <span>or continue with</span>
         </div>
 
-        <button className="auth-modal-google" onClick={handleSubmit} type="button">
+        <button className="auth-modal-google" onClick={handleGoogleAuth} type="button" disabled={loading}>
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path
               fill="#4285F4"

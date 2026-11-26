@@ -5,6 +5,8 @@ import { Navbar } from './components/layout/Navbar/Navbar';
 import { Footer } from './components/layout/Footer/Footer';
 import { AuthModal } from './components/auth/AuthModal/AuthModal';
 import { Home } from './pages/Home';
+import { EnterDetails } from './pages/EnterDetails';
+import { Information } from './pages/Information';
 
 export const App = () => {
   return (
@@ -14,6 +16,8 @@ export const App = () => {
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/enter-details" element={<EnterDetails />} />
+            <Route path="/information" element={<Information />} />
             <Route path="*" element={<Home />} />
           </Routes>
           <Footer />
