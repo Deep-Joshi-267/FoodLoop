@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Style, Avatar } from '@dicebear/core';
+import definition from '@dicebear/styles/glyphs.json';
 import { Container } from '../../common/Container/Container';
 import { Button } from '../../common/Button/Button';
 import { useAuth } from '../../../context/AuthContext';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import './Navbar.css';
+
+// Initialize DiceBear glyphs style
+const glyphsStyle = new Style(definition);
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,6 +17,26 @@ export const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user, profile, signOut } = useAuth();
   const { requireAuth } = useRequireAuth();
+
+  // Determine user role
+  const isCustomer = user && (profile?.role === 'customer' || user?.user_metadata?.role === 'customer' || !profile?.role);
+  const isRestaurantOwner = user && (profile?.role === 'restaurant_owner' || user?.user_metadata?.role === 'restaurant_owner');
+
+  // Generate deterministic Glyphs DiceBear avatar using user.id as seed
+  const avatarDataUri = useMemo(() => {
+    if (!user) return null;
+    try {
+      const avatar = new Avatar(glyphsStyle, {
+        seed: user.id || user.email || 'FoodLoopCustomer',
+        size: 40,
+      });
+      const svg = avatar.toString();
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    } catch (e) {
+      console.error('Failed to generate avatar:', e);
+      return null;
+    }
+  }, [user]);
 
   const handleLocationClick = () => {
     requireAuth(() => {
@@ -49,14 +74,12 @@ export const Navbar = () => {
     requireAuth(null, 'Sign in or register as a customer to reserve surplus food.', 'customer');
   };
 
-  const userDashboardLink = (profile?.role === 'restaurant_owner' || user?.user_metadata?.role === 'restaurant_owner')
-    ? '/information'
-    : '/enter-details';
+  const userDashboardLink = isRestaurantOwner ? '/information' : '/enter-details';
 
   return (
     <header className="navbar-header">
       <Container className="navbar-container">
-        {/* Left: Professional Tech Logo */}
+        {/* Left: Professional Tech Logo & Location (Location hidden for logged-in customers) */}
         <div className="navbar-left">
           <Link to="/" className="navbar-brand">
             <svg className="navbar-logo-symbol" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -71,18 +94,20 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* Blinkit-Style Location Pill */}
-          <button className="navbar-location-blinkit" onClick={handleLocationClick} type="button">
-            <div className="location-text-group">
-              <span className="location-title">Pickup at</span>
-              <div className="location-sub-group">
-                <span className="location-value">{selectedLocation}</span>
-                <svg className="location-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 6l4 4 4-4" />
-                </svg>
+          {/* Location Selector: Hidden when a customer is logged in */}
+          {!isCustomer && (
+            <button className="navbar-location-blinkit" onClick={handleLocationClick} type="button">
+              <div className="location-text-group">
+                <span className="location-title">Pickup at</span>
+                <div className="location-sub-group">
+                  <span className="location-value">{selectedLocation}</span>
+                  <svg className="location-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          )}
         </div>
 
         {/* Center: Clean Search Bar */}
@@ -100,17 +125,38 @@ export const Navbar = () => {
           />
         </form>
 
-        {/* Right: Partner link + Auth or User Profile */}
+        {/* Right Section */}
         <div className="navbar-right">
-          <button className="navbar-partner-btn" onClick={handlePartnerWithUsClick} type="button">
-            Partner with us
-          </button>
+          {/* "Partner with us" is removed when a customer is logged in */}
+          {!isCustomer && (
+            <button className="navbar-partner-btn" onClick={handlePartnerWithUsClick} type="button">
+              Partner with us
+            </button>
+          )}
 
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Link to={userDashboardLink} style={{ fontSize: '0.88rem', fontWeight: '600', color: '#1C1C1C' }}>
-                {user.email?.split('@')[0]}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {/* Profile Avatar (DiceBear Waves) */}
+              <Link to={userDashboardLink} title="View Account" style={{ display: 'flex', alignItems: 'center' }}>
+                <img
+                  src={avatarDataUri}
+                  alt="Avatar"
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    border: '2px solid #E23744',
+                    backgroundColor: '#FFFFFF',
+                    objectFit: 'cover',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                />
               </Link>
+
               <Button variant="outline" size="sm" onClick={signOut}>
                 Sign Out
               </Button>
@@ -136,12 +182,14 @@ export const Navbar = () => {
 
       {/* Mobile Drawer */}
       <div className={`navbar-mobile-drawer ${isMobileMenuOpen ? 'is-open' : ''}`}>
-        <button className="navbar-location-blinkit navbar-location-mobile" onClick={handleLocationClick}>
-          <div className="location-text-group">
-            <span className="location-title">Pickup location</span>
-            <span className="location-value">{selectedLocation}</span>
-          </div>
-        </button>
+        {!isCustomer && (
+          <button className="navbar-location-blinkit navbar-location-mobile" onClick={handleLocationClick}>
+            <div className="location-text-group">
+              <span className="location-title">Pickup location</span>
+              <span className="location-value">{selectedLocation}</span>
+            </div>
+          </button>
+        )}
 
         <form className="navbar-search-clean mobile-search" onSubmit={handleSearchSubmit}>
           <svg className="search-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#696969" strokeWidth="2">
@@ -161,15 +209,38 @@ export const Navbar = () => {
           <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handleBrowseClick(); }}>
             Browse Deals
           </button>
-          <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handlePartnerWithUsClick(); }}>
-            Partner With Us
-          </button>
+          {!isCustomer && (
+            <button className="mobile-link" onClick={() => { setIsMobileMenuOpen(false); handlePartnerWithUsClick(); }}>
+              Partner With Us
+            </button>
+          )}
         </div>
 
         {user ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <Link to={userDashboardLink} className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>
-              Dashboard ({user.email})
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <Link
+              to={userDashboardLink}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '8px 0',
+                borderBottom: '1px solid #F0F0F0',
+                fontWeight: '600',
+              }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <img
+                src={avatarDataUri}
+                alt="Avatar"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: '2px solid #E23744',
+                }}
+              />
+              <span>{user.email}</span>
             </Link>
             <Button variant="outline" size="md" fullWidth onClick={() => { setIsMobileMenuOpen(false); signOut(); }}>
               Sign Out

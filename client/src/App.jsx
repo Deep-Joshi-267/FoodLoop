@@ -7,6 +7,7 @@ import { AuthModal } from './components/auth/AuthModal/AuthModal';
 import { Home } from './pages/Home';
 import { EnterDetails } from './pages/EnterDetails';
 import { Information } from './pages/Information';
+import { Explore } from './pages/Explore';
 
 export const App = () => {
   return (
@@ -18,6 +19,7 @@ export const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/enter-details" element={<EnterDetails />} />
             <Route path="/information" element={<Information />} />
+            <Route path="/explore" element={<Explore />} />
             <Route path="*" element={<Home />} />
           </Routes>
           <Footer />

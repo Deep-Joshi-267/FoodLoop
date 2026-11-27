@@ -13,6 +13,21 @@ const userModel = {
     return res.rows[0];
   },
 
+  // Update customer details (full_name, phone, address)
+  updateCustomerDetails: async ({ id, fullName, phone, address }) => {
+    const updateQuery = `
+      UPDATE users
+      SET full_name = COALESCE($2, full_name),
+          phone = COALESCE($3, phone),
+          address = COALESCE($4, address),
+          updated_at = now()
+      WHERE id = $1
+      RETURNING *;
+    `;
+    const res = await db.query(updateQuery, [id, fullName, phone, address]);
+    return res.rows[0];
+  },
+
   // Upsert user on login/sync
   upsertUser: async ({ id, email, fullName, role, phone = null, address = null, businessName = null }) => {
     const existing = await db.query('SELECT * FROM users WHERE id = $1', [id]);
